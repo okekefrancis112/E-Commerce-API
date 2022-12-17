@@ -8,3 +8,6 @@ class CustomAuthMiddleware(object):
 
     @staticmethod
     def authorize_user(info):
+        from .authentication import Authentication
+        auth = Authentication(info.context)
+        return auth.authenticate()
