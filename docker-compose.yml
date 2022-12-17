@@ -1,19 +1,41 @@
-version: '3'
- 
-services:
- web:
-   build: .
-   command: bash -c "python manage.py runserver 0.0.0.0:8000"
-   container_name: ecommerce_api
-   restart: always
-   volumes:
-     - .:/ecommerce_api
-   ports:
-     - "8000:8000"
-   networks:
-     - ecommerce_net
- 
- 
+# version: '3'
+
+# services:
+#  web:
+#    build: .
+#    command: bash -c " python manage.py migrate &&
+#                       python manage.py runserver 0.0.0.0:8000"
+#    container_name: ecommerce_api
+#    restart: always
+
+#    volumes:
+#      - .:/ecommerce_api
+#    ports:
+#      - "9000:8000"
+#    networks:
+#      - ecommerce_net
+  #  depends_on:
+  #     - ecommerce_db
+
+
+#  postgres:
+#     # container_name: ecommerce_db
+#     image: postgres:13-alpine
+#     environment:
+#       POSTGRES_USER: "ecommerce_user"
+#       POSTGRES_PASSWORD: "ecommerce_password"
+#       PGDATA: /data/ecommerce_postgres
+#     volumes:
+#       - postgres:/data/ecommerce_postgres
+#     ports:
+#       - "5436:5432"
+#     networks:
+#       - ecommerce_net
+
+# volumes:
+#   postgres:
+
+
 networks:
  ecommerce_net:
    driver: bridge
