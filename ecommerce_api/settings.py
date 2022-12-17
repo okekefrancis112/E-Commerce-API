@@ -134,6 +134,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 GRAPHENE = {
     'SCHEMA': 'ecommerce_api.schema.schema',
     'MIDDLEWARE': [
-        'ecommerce_api.middleware.CustomAuthMiddleware',
+        'ecommerce_api.middlewares.CustomAuthMiddleware',
     ]
 }

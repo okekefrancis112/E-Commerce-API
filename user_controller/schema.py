@@ -57,11 +57,38 @@ class LoginUser(graphene.Mutation):
         )
 
 
+
+class GetAccess(graphene.Mutation):
+    access = graphene.String()
+
+    class Arguments:
+        refresh = graphene.String()
+
+    def mutate(self, info, refresh):
+        token = TokenManager.decode_token(refresh)
+
+        if not token or token["type"] != "refresh":
+            raise Exception("Invalid refresh token or has expired")
+
+        access = TokenManager.get_access({"user_id": token["user_id"]})
+
+        return GetAccess (
+            access = access,
+        )
+
+
+
 class Query(graphene.ObjectType):
     users = graphene.List(UserType)
 
-    resolve_users(self, info, **kwargs):
+    def resolve_users(self, info, **kwargs):
         return User.objects.all()
 
 
-schema = graphene.Schema(query=Query)
+class Mutation(graphene.ObjectType):
+    register_user = RegisterUser.Field()
+    login_user = LoginUser.Field()
+    get_access = GetAccess.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
