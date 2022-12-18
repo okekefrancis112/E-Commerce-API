@@ -5,7 +5,7 @@ from django.conf import settings
 class TokenManager:
     @staticmethod
     def get_token(exp, payload, token_type='access'):
-        exp = datetime.datetime.now().timestamp + (exp * 60)
+        exp = datetime.now().timestamp() + (exp * 60)
 
         return jwt.encode(
             {"exp":exp, "type":token_type, **payload},
@@ -20,18 +20,18 @@ class TokenManager:
         except jwt.DecodeError:
             return None
 
-        if datetime.now().timestamp > decoded["exp"]:
+        if datetime.now().timestamp() > decoded["exp"]:
             return None
 
         return decoded
 
     @staticmethod
     def get_access(payload):
-        return TokenManager.get_access(5, payload)
+        return TokenManager.get_token(5, payload)
 
     @staticmethod
     def get_refresh(payload):
-        return TokenManager.get_refresh(7*24*60, payload, "refresh")
+        return TokenManager.get_token(7*24*60, payload, "refresh")
 
 
 class Authentication:

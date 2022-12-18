@@ -4,6 +4,7 @@ from graphene_django import DjangoObjectType
 from django.contrib.auth import authenticate
 from datetime import datetime
 from ecommerce_api.authentication import TokenManager
+from ecommerce_api.permissions import is_authenticated
 
 
 class UserType(DjangoObjectType):
@@ -81,6 +82,7 @@ class GetAccess(graphene.Mutation):
 class Query(graphene.ObjectType):
     users = graphene.List(UserType)
 
+    @is_authenticated 
     def resolve_users(self, info, **kwargs):
         return User.objects.all()
 
