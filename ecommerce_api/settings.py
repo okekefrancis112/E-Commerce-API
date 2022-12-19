@@ -135,5 +135,7 @@ GRAPHENE = {
     'SCHEMA': 'ecommerce_api.schema.schema',
     'MIDDLEWARE': [
         'ecommerce_api.middlewares.CustomAuthMiddleware',
-    ]
+        'ecommerce_api.middlewares.CustomPaginationMiddleware',
+    ],
+    'PAGE_SIZE': 10
 }
