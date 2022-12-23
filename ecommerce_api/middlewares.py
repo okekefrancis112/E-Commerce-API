@@ -15,16 +15,21 @@ class CustomAuthMiddleware(object):
 
 
 class CustomPaginationMiddleware(object):
-    
+
     def resolve(self, next, root, info, **kwargs):
         try:
+            # print("info>>>>>>>>>>>>>>>", info.return_type.name)
             is_paginated = info.return_type.name[-9:]
+            print(is_paginated)
             is_paginated = is_paginated == "Paginated"
+            print(is_paginated)
+            # print("yes")
         except Exception:
             is_paginated = False
 
         if is_paginated:
             page = kwargs.pop("page", 1)
+            # print(resolve_paginated(next(root, info, **kwargs).value, info, page))
             return resolve_paginated(next(root, info, **kwargs).value, info, page)
-
+        # print(next(root, info, **kwargs))
         return next(root, info, **kwargs)

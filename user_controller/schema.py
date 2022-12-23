@@ -1,16 +1,31 @@
 import graphene
-from .models import User
+from .models import User, ImageUpload
 from graphene_django import DjangoObjectType
 from django.contrib.auth import authenticate
 from datetime import datetime
 from ecommerce_api.authentication import TokenManager
 from ecommerce_api.permissions import is_authenticated, paginate
+from graphene_file_upload.scalars import Upload
+from django.conf import settings
 
 
 class UserType(DjangoObjectType):
 
     class Meta:
         model = User
+
+
+
+class ImageUploadType(DjangoObjectType):
+    image = graphene.String()
+
+    class Meta:
+        model = ImageUpload
+
+    def resolve_image(self, info):
+        if self.image:
+            return "{}{}{}".format(settings.STATIC_URL, settings.MEDIA_URL, self.image)
+        return None
 
 
 class RegisterUser(graphene.Mutation):
@@ -79,18 +94,40 @@ class GetAccess(graphene.Mutation):
 
 
 
+class ImageUploadMain(graphene.Mutation):
+    image = graphene.Field(ImageUploadType)
+
+    class Arguments:
+        image = Upload(required=True)
+
+    def mutate(self, info, image):
+        image = ImageUpload.objects.create(image=image)
+
+        return ImageUploadMain(
+            image=image,
+        )
+
+
 class Query(graphene.ObjectType):
-    users = graphene.Field(paginate(UserType))
+    users = graphene.Field(paginate(UserType), page=graphene.Int())
+    images = graphene.Field(paginate(ImageUploadType), page=graphene.Int())
+    # print(users)
 
     # @is_authenticated
     def resolve_users(self, info, **kwargs):
+        # print(info.context.user)
         return User.objects.filter(**kwargs)
+
+    def resolve_images(self, info, **kwargs):
+        # print(info.context.user)
+        return ImageUpload.objects.filter(**kwargs)
 
 
 class Mutation(graphene.ObjectType):
     register_user = RegisterUser.Field()
     login_user = LoginUser.Field()
     get_access = GetAccess.Field()
+    image_upload = ImageUploadMain.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
