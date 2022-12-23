@@ -233,6 +233,25 @@ class UpdateUserAddress(graphene.Mutation):
         )
 
 
+class DeleteUserAddress(graphene.Mutations):
+    status = graphene.Boolean()
+
+    class Arguments:
+        address_id = graphene.ID(required=True)
+
+    @is_authenticated
+    def mutate(self, info, address_id):
+        profile_id = info.context.user.user_profile.id
+
+        UserAddress.objects.filter(
+            user_profile_id = profile_id,
+            id=address_id
+        ).delete()
+
+        return DeleteUserAddress(
+            status=True,
+        )
+
 
 
 class Query(graphene.ObjectType):
@@ -260,6 +279,11 @@ class Mutation(graphene.ObjectType):
     login_user = LoginUser.Field()
     get_access = GetAccess.Field()
     image_upload = ImageUploadMain.Field()
+    create_user_profile = CreateUserProfile.Field()
+    update_user_profile = UpdateUserProfile.Field()
+    create_user_address = CreateUserAddress.Field()
+    update_user_address = UpdateUserAddress.Field()
+    delete_user_address = DeleteUserAddress.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
