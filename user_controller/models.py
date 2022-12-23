@@ -60,3 +60,32 @@ class ImageUpload(models.Model):
 
     def __str__(self):
         return str(self.image)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, related_name="user_profile", on_delete=models.CASCADE)
+    profile_picture = models.ForeignKey(ImageUpload, related_name="user_images", on_delete=models.SET_NULL, null=True)
+    dob = models.DateField()
+    phone = models.PositiveIntegerField()
+    country_code = models.CharField(max_length=5, default='+234')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user.email
+
+
+class UserAddress(models.Model):
+    user_profile = models.ForeignKey(UserProfile, related_name="user_addresses", on_delete=models.CASCADE)
+    street = models.TextField()
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    country = models.CharField(max_length=100, default="Nigeria")
+    is_default = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user_profile.user.email

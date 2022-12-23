@@ -1,5 +1,5 @@
 import graphene
-from .models import User, ImageUpload
+from .models import User, ImageUpload, UserAddress, UserProfile
 from graphene_django import DjangoObjectType
 from django.contrib.auth import authenticate
 from datetime import datetime
@@ -26,6 +26,18 @@ class ImageUploadType(DjangoObjectType):
         if self.image:
             return "{}{}{}".format(settings.STATIC_URL, settings.MEDIA_URL, self.image)
         return None
+
+
+class UserProfileType(DjangoObjectType):
+
+    class Meta:
+        model = UserProfile
+
+
+class UserAddressType(DjangoObjectType):
+
+    class Meta:
+        model = UserAddress
 
 
 class RegisterUser(graphene.Mutation):
@@ -110,9 +122,123 @@ class ImageUploadMain(graphene.Mutation):
         )
 
 
+class UserProfileInput(graphene.InputObjectType):
+    profile_picture = graphene.String()
+    country_code = graphene.String()
+
+
+class CreateUserProfile(graphene.Mutation):
+    user_profile = graphene.Field(UserProfileType)
+
+    class Arguments:
+        profile_data = UserProfileInput()
+        dob = graphene.Date(required=True)
+        phone = graphene.Int(required=True)
+
+    @is_authenticated
+    def mutate(self, info, profile_data, **kwargs):
+        user_profile = UserProfile.objects.create(
+            user_id = info.context.user.id,
+            **profile_data, **kwargs
+        )
+
+        return CreateUserProfile(
+            user_profile=user_profile,
+        )
+
+
+class UpdateUserProfile(graphene.Mutation):
+    user_profile = graphene.Field(UserProfileType)
+
+    class Arguments:
+        profile_data = UserProfileInput()
+        dob = graphene.Date(required=True)
+        phone = graphene.Int(required=True)
+
+    @is_authenticated
+    def mutate(self, info, profile_data, **kwargs):
+        try:
+            info.context.user.user_profile
+        except Exception:
+            raise Exception("You don't have a profile to update.")
+
+        UserProfile.objects.filter(user_id = info.context.user.id).update(**profile_data, **kwargs)
+
+        return UpdateUserProfile(
+            user_profile = info.context.user.user_profile
+        )
+
+
+class AddressInput(graphene.InputObjectType):
+    street = graphene.String()
+    city = graphene.String()
+    state = graphene.String()
+    country = graphene.String()
+
+
+class CreateUserAddress(graphene.Mutation):
+    address = graphene.Field(UserAddressType)
+
+    class Arguments:
+        address_data = AddressInput(required=True)
+        is_default = graphene.Boolean()
+
+    @is_authenticated
+    def mutate(self, info, address_data, is_default):
+        try:
+            user_profile_id = info.context.user.user_profile.id
+        except Exception:
+            raise Exception("You need a profile to create an address")
+
+        existing_addresses = UserAddress.objects.filter(user_profile_id=user_profile_id)
+
+        if is_default:
+            existing_addresses.update(is_default=False)
+
+        address = UserAddress.objects.create(
+            user_profile_id=user_profile_id,
+            is_default=is_default,
+            **address_data
+        )
+
+        return CreateUserAddress (
+            address=address,
+        )
+
+
+class UpdateUserAddress(graphene.Mutation):
+    address = graphene.Field(UserAddressType)
+
+    class Arguments:
+        address_data = AddressInput(required=True)
+        is_default = graphene.Boolean()
+        address_id = graphene.ID(required=True)
+
+    @is_authenticated
+    def mutate(self, info, address_data, address_id, is_default=False):
+        profile_id = info.context.user.user_profile.id
+
+        UserProfile.objects.filter(
+            user_profile_id = profile_id,
+            id=address_id,
+            ).update(is_default=is_default, **address_data)
+
+        if is_default:
+            UserAddress.objects.filter(
+                user_profile_id=profile_id
+                ).exclude(id=address_id).update(is_default=False)
+
+        return UpdateUserAddress(
+            address=UserAddress.objects.get(id=address_id)
+        )
+
+
+
+
 class Query(graphene.ObjectType):
     users = graphene.Field(paginate(UserType), page=graphene.Int())
-    images = graphene.Field(paginate(ImageUploadType), page=graphene.Int())
+    images_uploads = graphene.Field(paginate(ImageUploadType), page=graphene.Int())
+    me = graphene.Field(UserType)
     # print(users)
 
     # @is_authenticated
@@ -123,6 +249,10 @@ class Query(graphene.ObjectType):
     def resolve_images(self, info, **kwargs):
         # print(info.context.user)
         return ImageUpload.objects.filter(**kwargs)
+
+    @is_authenticated
+    def resolve_me(self, info, **kwargs):
+        return info.context.user
 
 
 class Mutation(graphene.ObjectType):
