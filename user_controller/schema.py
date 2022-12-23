@@ -35,9 +35,11 @@ class RegisterUser(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
         password = graphene.String(required=True)
+        first_name = graphene.String(required=True)
+        last_name = graphene.String(required=True)
 
-    def mutate(self, info, email, password):
-        User.objects.create_user(email, password)
+    def mutate(self, info, email, password, **kwargs):
+        User.objects.create_user(email, password, **kwargs)
 
         return RegisterUser(
             status=True,
