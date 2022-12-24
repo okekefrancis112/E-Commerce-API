@@ -377,6 +377,48 @@ class UpdateCartItem(graphene.Mutation):
         )
 
 
+class DeleteCartItem(graphene.Mutation):
+    status = graphene.Boolean()
+
+    class Arguments:
+        cart_id = graphene.ID(required=True)
+
+    @is_authenticated
+    def mutate(self, info, cart_id):
+        Cart.objects.filter(id=cart_id, user_id=info.context.user.id).delete()
+
+        return UpdateCartItem(
+            status=True,
+        )
+
+
+class UpdateProductImage(graphene.Mutation):
+    image = graphene.Field(ProductImageType)
+
+    class Arguments:
+        image_data = ProductImageType()
+        id = graphene.ID(require=True)
+
+    @is_authenticated
+    def mutate(self, info, image_data, id):
+        try:
+            biz_id = info.context.user.user_business.id
+        except Exception:
+            raise Exception("You do not have a business, access denied.")
+
+        my_image = ProductImage.objects.filter(product__business_id=biz_id, id=id)
+        if not my_image:
+            raise Exception("You do not own this product.")
+
+        my_image.update(**image_data)
+        if image_data.get("is_cover", False):
+            ProductImage.objects.filter(product__business_id=biz_id).exclude(id=id).update(is_cover=False)
+
+        return UpdateProductImage(
+            image = ProductImage.objects.get(id=id)
+        )
+
+
 
 schema = graphene.Schema(query=Query)
 
