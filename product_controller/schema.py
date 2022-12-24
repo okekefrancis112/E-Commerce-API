@@ -343,6 +343,23 @@ class HandleWishList(graphene.Mutation):
         return HandleWishList(status=True)
 
 
+class CreateCartItem(graphene.Mutation):
+    cart_item = graphene.Field(CartType)
+
+    class Arguments:
+        product_id = graphene.ID(required=True)
+        quantity = graphene.Int()
+
+    @is_authenticated
+    def mutate(self, info, product_id, **kwargs):
+        Cart.objects.filter(product_id=product_id, user_id=info.context.user.id).delete()
+
+        cart_item = Cart.objects.create(product_id=product_id, user_id=info.context.user.id, **kwargs)
+
+        return CreateCartItem(
+            cart_item=cart_item,
+        )
+
 
 
 schema = graphene.Schema(query=Query)
