@@ -361,6 +361,22 @@ class CreateCartItem(graphene.Mutation):
         )
 
 
+class UpdateCartItem(graphene.Mutation):
+    cart_item = graphene.Field(CartType)
+
+    class Arguments:
+        cart_id = graphene.ID(required=True)
+        quantity = graphene.Int(required=True)
+
+    @is_authenticated
+    def mutate(self, info, cart_id, **kwargs):
+        Cart.objects.filter(id=cart_id, user_id=info.context.user.id).update(**kwargs)
+
+        return UpdateCartItem(
+            cart_item=Cart.objects.get(id=cart_id),
+        )
+
+
 
 schema = graphene.Schema(query=Query)
 
