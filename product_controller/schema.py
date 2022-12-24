@@ -65,7 +65,7 @@ class Query(graphene.ObjectType):
                               categories = graphene.String(), business=graphene.String(),
                               sort_by=graphene.String(), is_asc=graphene.Boolean(),
                               )
-    product = graphene.Field(ProductType, id=graphene.ID(required=True)),
+    product = graphene.Field(ProductType, id=graphene.ID(required=True), )
 
     def resolve_categories(self, info, name):
         query = Category.objects.prefetch_related("product_categories")
@@ -126,6 +126,58 @@ class Query(graphene.ObjectType):
             ).get(id=id)
 
             return query
+
+
+
+class CreateBusiness(graphene.Mutation):
+    business = graphene.Field(BusinessType)
+
+    class Arguments:
+        name = graphene.String(required=True)
+
+    @is_authenticated
+    def mutate(self, info, name):
+        biz =  Business.objects.create(name=name, user_id=info.context.user.id)
+
+        return CreateBusiness(
+            business=biz
+        )
+
+
+class UpdateBusiness(graphene.Mutation):
+    business = graphene.Field(BusinessType)
+
+    class Arguments:
+        name = graphene.String(required=True)
+
+    @is_authenticated
+
+    def mutate(self, info, name):
+
+        try:
+            instance = info.context.user.user_business
+        except Exception:
+            raise Exception("You do not have a business to Update.")
+
+        instance.name = name
+        instance.save()
+
+        return UpdateBusiness(
+            business=instance
+        )
+
+
+class DeleteBusiness(graphene.Mutation):
+    status = graphene.Boolean()
+
+    @is_authenticated
+    def mutate(self, info):
+        Business.objects.filter(user_id=info.context.user.id).delete()
+
+        return DeleteBusiness(
+            status = True,
+        )
+
 
 
 schema = graphene.Schema(query=Query)
