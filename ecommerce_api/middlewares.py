@@ -20,9 +20,9 @@ class CustomPaginationMiddleware(object):
         try:
             # print("info>>>>>>>>>>>>>>>", info.return_type.name)
             is_paginated = info.return_type.name[-9:]
-            print(is_paginated)
+            # print(is_paginated)
             is_paginated = is_paginated == "Paginated"
-            print(is_paginated)
+            # print(is_paginated)
             # print("yes")
         except Exception:
             is_paginated = False

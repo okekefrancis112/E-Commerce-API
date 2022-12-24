@@ -233,7 +233,7 @@ class UpdateUserAddress(graphene.Mutation):
         )
 
 
-class DeleteUserAddress(graphene.Mutations):
+class DeleteUserAddress(graphene.Mutation):
     status = graphene.Boolean()
 
     class Arguments:
