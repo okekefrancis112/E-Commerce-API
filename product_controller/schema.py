@@ -265,6 +265,51 @@ class DeleteProduct(graphene.Mutation):
         )
 
 
+class CreateProductComment(graphene.Mutation):
+    product_comment = graphene.Field(ProductCommentType)
+
+    class Argument:
+        product_id = graphene.ID(required=True)
+        comment = graphene.String(required=True)
+        rate = graphene.Int()
+
+    @is_authenticated
+    def mutate(self, info, product_id, **kwargs):
+        user_biz_id = None
+        try:
+            user_biz_id = info.context.user.user_business.id
+        except Exception:
+            pass
+
+        if user_biz_id:
+            own_product = Product.objects.filter(business_id=user_biz_id, id=product_id)
+            if own_product:
+                raise Exception("You cannot comment on your product")
+
+        ProductComment.objects.filter(user=info.context.user.id, product_id=product_id).delete()
+
+        pc = ProductComment.objects.create(product_id=product_id, **kwargs)
+
+        return CreateProductComment(
+            product_comment = pc
+        )
+
+
+# class DeleteProductComment(graphene.Mutation):
+#     status = graphene.Boolean()
+
+#     class Arguments:
+#         product_id = graphene.ID(required=True)
+
+#     @is_authenticated
+#     def mutate(self, info, product_id):
+#         Product.objects.filter(id=product_id, business_id=info.context.user.user_business.id).delete()
+
+#         return DeleteProduct(
+#             status=True
+#         )
+
+
 
 
 schema = graphene.Schema(query=Query)
