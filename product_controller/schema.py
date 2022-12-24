@@ -179,6 +179,93 @@ class DeleteBusiness(graphene.Mutation):
         )
 
 
+class ProductInput(graphene.InputObjectType):
+    name = graphene.String()
+    price = graphene.Float()
+    description = graphene.String()
+    category_id = graphene.String()
+
+
+class ProductImageInput(graphene.InputObjectType):
+    image_id = graphene.ID(required=True)
+    is_cover = graphene.Boolean()
+
+
+class CreateProduct(graphene.Mutation):
+    product = graphene.Field(ProductType)
+
+    class Arguments:
+        product_data = ProductInput(required=True)
+        total_count = graphene.Int(required=True)
+        images = graphene.List(ProductImageInput)
+
+    @is_authenticated
+    def mutate(self, info, product_data, images, **kwargs):
+        try:
+            biz_id = info.context.user.user_business.id
+        except Exception:
+            raise Exception("You do not have a business")
+
+        have_product = Product.objects.filter(business_id=biz_id, name=product_data["name"])
+        if have_product:
+            raise Exception("You already have a product with this name")
+
+        product_data['total_available'] = product_data["total_count"]
+
+        product = Product.objects.create(**product_data, **kwargs)
+
+        ProductImage.objects.bulk_create([
+            ProductImage(product_id=product.id, **image_data) for image_data in images
+        ])
+
+        return CreateProduct(
+            product=product,
+        )
+
+
+class UpdateProduct(graphene.Mutation):
+    product = graphene.Field(ProductType)
+
+    class Arguments:
+        product_data = ProductInput()
+        total_available = graphene.Int()
+        product_id = graphene.ID(required=True)
+
+        @is_authenticated
+        def mutate(self, info, product_data, product_id, **kwargs):
+            try:
+                biz_id = info.context.user.user_business.id
+            except Exception:
+                raise Exception("You do not have a business")
+
+            if product_data.get('name', None):
+                have_product = Product.objects.filter(business_id=biz_id, name=product_data["name"])
+                if have_product:
+                    raise Exception("You already have a product with this name")
+
+            Product.objects.filter(id=product_id, business_id=biz_id).update(**product_data, **kwargs)
+
+            return UpdateProduct(
+                product=Product.objects.get(id=product_id)
+            )
+
+
+class DeleteProduct(graphene.Mutation):
+    status = graphene.Boolean()
+
+    class Arguments:
+        product_id = graphene.ID(required=True)
+
+    @is_authenticated
+    def mutate(self, info, product_id):
+        Product.objects.filter(id=product_id, business_id=info.context.user.user_business.id).delete()
+
+        return DeleteProduct(
+            status=True
+        )
+
+
+
 
 schema = graphene.Schema(query=Query)
 
