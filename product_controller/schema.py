@@ -310,6 +310,39 @@ class CreateProductComment(graphene.Mutation):
 #         )
 
 
+class HandleWishList(graphene.Mutation):
+    status = graphene.Boolean()
+
+    class Arguments:
+        product_id = graphene.ID(required=True)
+        is_check = graphene.Boolean()
+
+    @is_authenticated
+    def mutate(self, info, product_id, is_check=False):
+        try:
+            product = Product.objects.get(id=product_id)
+        except Exception:
+            raise Exception("Product with product_id does not exist")
+
+        try:
+            user_wish = info.context.user.user_wish
+        except Exception:
+            user_wish = Wish.objects.create(user_id=info.context.user.user_id)
+
+        has_product = user_wish.products.filter(id=product_id)
+
+        if has_product:
+            if is_check:
+                return HandleWishList(status=True)
+            user_wish.products.remove(product)
+        else:
+            if is_check:
+                return HandleWishList(status=False)
+            user_wish.products.add()
+
+        return HandleWishList(status=True)
+
+
 
 
 schema = graphene.Schema(query=Query)
