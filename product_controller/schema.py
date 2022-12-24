@@ -420,5 +420,47 @@ class UpdateProductImage(graphene.Mutation):
 
 
 
-schema = graphene.Schema(query=Query)
+class CompletePayment(graphene.Mutation):
+    status = graphene.Boolean()
+
+    @is_authenticated
+    def mutate(self, info):
+        user_carts = Cart.objects.filter(user_id = info.context.user.id)
+
+        RequestCart.objects.bulk_create([
+            RequestCart(
+                user_id = info.context.user.id,
+                business_id=cart_item.product.business.id,
+                product_id=cart_item.product.id,
+                quantity=cart_item.quantity,
+                price=cart_item.quantity * cart_item.product.price,
+            ) for cart_item in user_carts
+        ])
+
+        user_carts.delete()
+
+        return CompletePayment(
+            status = True,
+        )
+
+
+
+class Mutation(graphene.ObjectType):
+    create_business = CreateBusiness.Field()
+    update_business = UpdateBusiness.Field()
+    delete_business = DeleteBusiness.Field()
+    create_product = CreateProduct.Field()
+    update_product = UpdateProduct.Field()
+    delete_product = DeleteProduct.Field()
+    update_product_image = UpdateProductImage.Field()
+    create_product_comment = CreateProductComment.Field()
+    handle_wish_list = HandleWishList.Field()
+    create_cart_item = CreateCartItem.Field()
+    update_cart_item = UpdateCartItem.Field()
+    delete_cart_item = DeleteCartItem.Field()
+    complete_payment = CompletePayment.Field()
+
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
 
